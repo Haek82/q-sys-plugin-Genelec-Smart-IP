@@ -21,25 +21,7 @@ local Colors = {
 -- While this function can be very useful, it is completely optional and not always needed.
 -- If no Properties are set here, only the position and fill properties of your plugin will show in the Properties pane
 function GetProperties()
-    props = {
-        {
-            Name = "MyStringProperty",
-            Type = "string",
-            Value = "Hello World"
-        },
-        {
-            Name = "MyIntegerProperty",
-            Type = "integer",
-            Min = 2,
-            Max = 10,
-            Value = 5
-        },
-        {
-            Name = "MyBooleanProperty",
-            Type = "boolean",
-            Value = false
-        }
-    }
+    props = { }
     return props
 end
 
@@ -61,116 +43,36 @@ end
 -- ControlUnit ( ControlType == Knob ) can be Hz, Float, Integer, Pan, Percent, Position or Seconds
 function GetControls(props)
     ctls = {
-        -- ControlType == Indicator
-        {
-            Name = "IndicatorLed",
-            ControlType = "Indicator",
-            IndicatorType = "Led",
-            PinStyle = "Output",
-            UserPin = true
-        },
-        {
-            Name = "IndicatorMeter",
-            ControlType = "Indicator",
-            IndicatorType = "Meter",
-            PinStyle = "Output",
-            UserPin = true
-        },
-        {
-            Name = "IndicatorText",
-            ControlType = "Indicator",
-            IndicatorType = "Text",
-            PinStyle = "Output",
-            UserPin = true
-        },
-        {
-            Name = "IndicatorStatus",
-            ControlType = "Indicator",
-            IndicatorType = "Status",
-            PinStyle = "Output",
-            UserPin = true
-        },
+
         -- ControlType == Button
         {
-            Name = "ButtonMomentary",
+            Name = "Mute",
             ControlType = "Button",
             ButtonType = "Toggle",
-            PinStyle = "Input",
-            Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "ButtonToggle",
-            ControlType = "Button",
-            ButtonType = "Toggle",
-            PinStyle = "Input",
-            Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "ButtonTrigger",
-            ControlType = "Button",
-            ButtonType = "Trigger",
             PinStyle = "Input",
             Count = 1,
             UserPin = true
         },
         -- ControlType == Knob
+        
         {
-            Name = "KnobHz",
-            ControlType = "Knob",
-            ControlUnit = "Hz",
-            PinStyle = "Output",
-            Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "KnobFloat",
+            Name = "Gain",
             ControlType = "Knob",
             ControlUnit = "Float",
-            PinStyle = "Output",
+            Min = -120.0,
+            Max = 0,
+            UserPin = true,
+            PinStyle = "Input",
             Count = 1,
-            UserPin = true
         },
+
+        -- ControlType == Text
         {
-            Name = "KnobInteger",
-            ControlType = "Knob",
-            ControlUnit = "Integer",
-            PinStyle = "Output",
+            Name = "IPAddress",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Input",
             Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "KnobPan",
-            ControlType = "Knob",
-            ControlUnit = "Pan",
-            PinStyle = "Output",
-            Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "KnobPercent",
-            ControlType = "Knob",
-            ControlUnit = "Percent",
-            PinStyle = "Output",
-            Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "KnobPosition",
-            ControlType = "Knob",
-            ControlUnit = "Position",
-            PinStyle = "Output",
-            Count = 1,
-            UserPin = true
-        },
-        {
-            Name = "KnobSeconds",
-            ControlType = "Knob",
-            ControlUnit = "Seconds",
-            PinStyle = "Output",
-            Count = 1,
-            UserPin = true
         }
     }
     return ctls
@@ -188,38 +90,55 @@ end
 
 -- This function allows you to layout pages in your plugin.
 function GetControlLayout(props)
-    -- layout holds representaiton of Controls
+    -- layout holds representaiton of 
     local layout = {}
     -- graphics holds aesthetic & design items
-    local graphics = {}
+    --local graphics = {}
     -- ctl_str is a helper string to get around system not indexing single value as [1]
     --local ctl_str = tostring(props["SomeValue"].Value == 1 and "" or " " .. PageIndex)
     -- x,y allows an easy method of knowing where you are relative to the section being designed
     local x, y = 0, 0
+    local xControls, yControls = 15, 70
 
-    layout["ButtonToggle"] = {
-        PrettyName = "Test Button",
+    layout["Mute"] = {
+        PrettyName = "Mute",
         Style = "Button",
-        ButtonStyle = "Momentary",
-		Color = {223, 0, 36},
+        ButtonStyle = "Toggle",
+        Legend = "MUTE",
+        TextFontSize = 16,
+        Color = {223, 0, 36},
 		UnlinkOffColor = false,
-		Position = {x + 10, y + 30},
-		Size = {30, 30}
+        Position = {xControls + 298, yControls + 355},
+		Size = {64, 40}
+    }
 
-    }
-    layout["IndicatorText"] = {
-        PrettyName = "Text Indication",
-		Style = "Text",
-		HTextAlign = "Left",
-		Padding = 5,
-		StrokeWidth = 0,
-		Position = {x + 10, y + 70},
-		Size = {125, 20}
-    }
+    layout["Gain"] = {
+        PrettyName = "Gain",
+        Style = "Fader",
+        ControlUnit = "Float",
+        Color = Colors.GenelecGreen,
+        Position = {xControls + 300, yControls + 30},
+        Size = { 60 , 320 },
+        TextFontSize = 40,
+        ShowTextbox = true,
+      }
+
+    layout["IPAddress"] ={
+        Style = "Text",
+        PrettyName = "Device~IP Address",
+        TextBoxStyle = "Normal",
+        Position = { xControls + 90, yControls + 15 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.White,
+        TextSize = 12,
+        HTextAlign = "Left",
+        VTextAlign = "Center",
+      }
 
     -- Graphics Section
-    table.insert(
-        graphics,
+    graphics =
+    {
         {
             Type = "GroupBox", -- This is the overall groupbox that will give the plugin a more 'contained' look
             --Text = "Design Elements",
@@ -229,9 +148,49 @@ function GetControlLayout(props)
             StrokeColor = Colors.Black,
             StrokeWidth = 1,
             Position = {x, y},
-            Size = {220, 140} -- The width of the main GroupBox is dependent on how many channels the user specified. More channels means a wider group box
-        }
-    ) 
+            Size = {420, 500} -- The width of the main GroupBox is dependent on how many channels the user specified. More channels means a wider group box
+        },
+            --Logo
+        {
+            Type = "Svg", --  Logo
+            Image = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiCiAgIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB3aWR0aD0iMTU4Ljc1bW0iCiAgIGhlaWdodD0iMjcuMjc4NTQybW0iCiAgIHZpZXdCb3g9IjAgMCAxNTguNzUgMjcuMjc4NTQyIgogICB2ZXJzaW9uPSIxLjEiCiAgIGlkPSJzdmc4IgogICBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkyLjQgKDVkYTY4OWMzMTMsIDIwMTktMDEtMTQpIgogICBzb2RpcG9kaTpkb2NuYW1lPSJkcmF3aW5nLnN2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczIiIC8+CiAgPHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJiYXNlIgogICAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgICBib3JkZXJjb2xvcj0iIzY2NjY2NiIKICAgICBib3JkZXJvcGFjaXR5PSIxLjAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAuMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOnpvb209IjAuOTg5OTQ5NDkiCiAgICAgaW5rc2NhcGU6Y3g9IjExOC4yNzMxOSIKICAgICBpbmtzY2FwZTpjeT0iLTQwLjYyNzk1MiIKICAgICBpbmtzY2FwZTpkb2N1bWVudC11bml0cz0ibW0iCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ibGF5ZXIxIgogICAgIHNob3dncmlkPSJmYWxzZSIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjI1NjAiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTM0NiIKICAgICBpbmtzY2FwZTp3aW5kb3cteD0iMzQxMiIKICAgICBpbmtzY2FwZTp3aW5kb3cteT0iMzIyOSIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIiAvPgogIDxtZXRhZGF0YQogICAgIGlkPSJtZXRhZGF0YTUiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxnCiAgICAgaW5rc2NhcGU6bGFiZWw9IkxheWVyIDEiCiAgICAgaW5rc2NhcGU6Z3JvdXBtb2RlPSJsYXllciIKICAgICBpZD0ibGF5ZXIxIgogICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yNy41Mjc0MTMsLTYxLjc4MjgzNykiPgogICAgPGcKICAgICAgIGlkPSJnODUyIgogICAgICAgdHJhbnNmb3JtPSJtYXRyaXgoMC4yNjQ1ODMzMywwLDAsMC4yNjQ1ODMzMywyMS45OTc2MjEsLTEwLjA1MTUzNykiPgogICAgICA8cGF0aAogICAgICAgICBpZD0icGF0aDgxNyIKICAgICAgICAgZD0iTSAxMDguOSwzMTYuMyBIIDY5LjYgYyAtMS4xLDAgLTEuNiwwLjcgLTEuNiwxLjkgdiA4IGMgMCwwLjkgMC40LDEuNCAxLjUsMS40IGggMjMgdiAzMi4zIGMgLTQuMywwLjcgLTQsMS41IC0xNC4yLDEuNSAtMzEuNiwwIC00MCwtMjEuOSAtNDAsLTQxLjEgMCwtMjQuNSAxMy4zLC0zNi4zIDM1LjEsLTM2LjMgMTIuOCwwIDI5LDQuNiAyOS42LDQuNiAwLjUsMCAxLjEsLTAuNCAxLjIsLTEgMCwwIDIsLTguOSAyLC05LjkgMCwtMC42IC0wLjEsLTEuNSAtMS40LC0yIDAsMCAtMTEuOCwtNCAtMjguMSwtNCAtMzcuMywwIC01NS44LDIzLjcgLTU1LjgsNTIuNyAwLDMxLjYgMTkuNiw1MC4yIDUzLjMsNTAuMiAxNS4zLDAgMzQuOCwtNS4zIDM0LjgsLTUuMyAwLjYsLTAuMSAxLjQsLTEgMS40LC0yIHYgLTQ4LjggYyAwLC0xLjEgLTAuNSwtMi4yIC0xLjUsLTIuMiIKICAgICAgICAgY2xhc3M9InN0MCIKICAgICAgICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIKICAgICAgICAgc3R5bGU9ImZpbGw6IzBlOTU1ZSIgLz4KICAgICAgPHBhdGgKICAgICAgICAgaWQ9InBhdGg4MTkiCiAgICAgICAgIGQ9Im0gMTg0LjYsMzYxLjIgaCAtNDQuNSB2IC0zNC4zIGggNDAuNiBjIDEsMCAxLjQsLTEuMiAxLjQsLTIuMiB2IC03LjMgYyAwLC0wLjkgLTAuMiwtMS42IC0xLjksLTEuNiBoIC00MC4xIHYgLTMxLjYgaCA0Mi4zIGMgMS4xLDAgMS42LC0wLjQgMS42LC0xLjEgdiAtOC41IGMgMCwtMC43IC0wLjYsLTEuMiAtMS41LC0xLjIgaCAtNTguMyBjIC0xLjQsMCAtMS45LDAuOSAtMS45LDIuMiB2IDk1LjMgYyAwLDEuMiAwLjQsMS45IDEuOSwxLjkgaCA2MC43IGMgMS4xLDAgMS42LC0xIDEuNiwtMS45IHYgLTguMyBjIDAsLTAuOCAtMC43LC0xLjQgLTEuOSwtMS40IgogICAgICAgICBjbGFzcz0ic3QwIgogICAgICAgICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICAgICAgICBzdHlsZT0iZmlsbDojMGU5NTVlIiAvPgogICAgICA8cGF0aAogICAgICAgICBpZD0icGF0aDgyMSIKICAgICAgICAgZD0ibSAyODMuNywyNzMuMyBoIC0xMC40IGMgLTEuNCwwIC0xLjcsMC43IC0xLjcsMi4yIHYgNTguOCBjIDAsNiAwLjYsMTAuOCAwLjYsMTAuOCBsIC02MC43LC03MS44IGggLTEyLjEgYyAtMS42LDAgLTIsMSAtMiwxLjYgdiA5Ni4yIGMgMCwwLjkgMC41LDEuNiAxLjUsMS42IGggMTAuNCBjIDAuNywwIDEuNiwtMSAxLjYsLTEuNyB2IC02Mi44IGMgMCwtNi41IC0wLjIsLTEwLjcgLTAuMiwtMTAuNyBsIDYxLjUsNzMuNyBjIDEsMS4xIDEuNywxLjUgMi45LDEuNSBoIDguOCBjIDAuNywwIDEuNCwtMC45IDEuNCwtMiB2IC05NS4yIGMgMCwtMS4zIC0wLjUsLTIuMiAtMS42LC0yLjIiCiAgICAgICAgIGNsYXNzPSJzdDAiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMwZTk1NWUiIC8+CiAgICAgIDxwYXRoCiAgICAgICAgIGlkPSJwYXRoODIzIgogICAgICAgICBkPSJtIDM2MC40LDM2MS4yIGggLTQ0LjUgdiAtMzQuMyBoIDQwLjYgYyAxLDAgMS40LC0xLjIgMS40LC0yLjIgdiAtNy4zIGMgMCwtMC45IC0wLjMsLTEuNiAtMS45LC0xLjYgaCAtNDAuMSB2IC0zMS42IGggNDIuMyBjIDEuMSwwIDEuNiwtMC40IDEuNiwtMS4xIHYgLTguNSBjIDAsLTAuNyAtMC42LC0xLjIgLTEuNSwtMS4yIEggMzAwIGMgLTEuNCwwIC0xLjksMC45IC0xLjksMi4yIHYgOTUuMyBjIDAsMS4yIDAuNCwxLjkgMS45LDEuOSBoIDYwLjcgYyAxLjEsMCAxLjYsLTEgMS42LC0xLjkgdiAtOC4zIGMgMCwtMC44IC0wLjYsLTEuNCAtMS45LC0xLjQiCiAgICAgICAgIGNsYXNzPSJzdDAiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMwZTk1NWUiIC8+CiAgICAgIDxwYXRoCiAgICAgICAgIGlkPSJwYXRoODI1IgogICAgICAgICBkPSJtIDQzMC4xLDM2MS4yIGggLTM5IHYgLTg1LjkgYyAwLC0wLjYgMCwtMiAtMSwtMiBoIC0xNS43IGMgLTAuOSwwIC0xLjEsMC45IC0xLjEsMS43IHYgOTYgYyAwLDEuMSAwLjksMS43IDEuNywxLjcgaCA1NC44IGMgMC42LDAgMS40LC0wLjQgMS40LC0xLjUgdiAtOSBjIDAsLTAuNCAtMC41LC0xIC0xLjEsLTEiCiAgICAgICAgIGNsYXNzPSJzdDAiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMwZTk1NWUiIC8+CiAgICAgIDxwYXRoCiAgICAgICAgIGlkPSJwYXRoODI3IgogICAgICAgICBkPSJtIDUwMi4yLDM2MS4yIGggLTQ0LjUgdiAtMzQuMyBoIDQwLjYgYyAxLDAgMS40LC0xLjIgMS40LC0yLjIgdiAtNy4zIGMgMCwtMC45IC0wLjIsLTEuNiAtMS45LC0xLjYgSCA0NTcuNyBWIDI4NC4yIEggNTAwIGMgMS4xLDAgMS42LC0wLjQgMS42LC0xLjEgdiAtOC41IGMgMCwtMC43IC0wLjYsLTEuMiAtMS41LC0xLjIgaCAtNTguMyBjIC0xLjQsMCAtMS45LDAuOSAtMS45LDIuMiB2IDk1LjMgYyAwLDEuMiAwLjQsMS45IDEuOSwxLjkgaCA2MC43IGMgMS4xLDAgMS42LC0xIDEuNiwtMS45IHYgLTguMyBjIC0wLjEsLTAuOCAtMC43LC0xLjQgLTEuOSwtMS40IgogICAgICAgICBjbGFzcz0ic3QwIgogICAgICAgICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICAgICAgICBzdHlsZT0iZmlsbDojMGU5NTVlIiAvPgogICAgICA8cGF0aAogICAgICAgICBpZD0icGF0aDgyOSIKICAgICAgICAgZD0ibSA1ODUuNiwzNTcuNCBjIC0wLjYsMCAtMTAuNyw0LjEgLTIyLjUsNC4xIC0xNCwwIC0zNy45LC03LjcgLTM3LjksLTQxLjMgMCwtMTQuNCA1LjEsLTM2LjMgMzQuOSwtMzYuMyA5LjMsMCAyNC40LDQgMjUuMiw0IDAuNSwwIDAuNywtMC4xIDEsLTAuNyAwLDAgMi41LC05LjkgMi41LC0xMC42IDAsLTAuNiAtMC42LC0xLjIgLTEuMiwtMS41IDAsMCAtOS4zLC0zLjYgLTI2LjIsLTMuNiAtMjYuNSwwIC01My4zLDE3IC01My4zLDUyLjggMCwzNi43IDI2LjQsNTAuMSA1MC4zLDUwLjEgMTYuOSwwIDI5LjMsLTQuNSAyOS4zLC00LjUgMC43LC0wLjIgMS40LC0wLjkgMS40LC0xLjQgMCwtMSAtMi4yLC0xMC40IC0yLjIsLTEwLjQgLTAuMSwtMC40IC0wLjYsLTAuNyAtMS4zLC0wLjciCiAgICAgICAgIGNsYXNzPSJzdDAiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMwZTk1NWUiIC8+CiAgICAgIDxwYXRoCiAgICAgICAgIGlkPSJwYXRoODMxIgogICAgICAgICBkPSJtIDYxOS45LDI3OS4yIGMgLTAuNiwtMS42IC0xLjUsLTIuOSAtMi43LC00IC0xLjEsLTEuMSAtMi41LC0yIC00LjEsLTIuNyAtMS42LC0wLjYgLTMuMywtMSAtNS4yLC0xIC0xLjgsMCAtMy41LDAuMyAtNS4xLDEgLTEuNiwwLjcgLTIuOSwxLjYgLTQuMSwyLjcgLTEuMiwxLjIgLTIuMSwyLjUgLTIuOCw0LjEgLTAuNywxLjYgLTEsMy4yIC0xLDUuMSAwLDEuOSAwLjMsMy42IDEsNS4yIDAuNiwxLjYgMS41LDIuOSAyLjcsNCAxLjEsMS4xIDIuNSwyIDQuMSwyLjcgMS42LDAuNiAzLjMsMSA1LjIsMSAxLjgsMCAzLjUsLTAuMyA1LjEsLTEgMS42LC0wLjcgMywtMS42IDQuMSwtMi43IDEuMiwtMS4yIDIuMSwtMi41IDIuOCwtNC4xIDAuNywtMS42IDEsLTMuMyAxLC01LjEgMCwtMS45IC0wLjMsLTMuNiAtMSwtNS4yIG0gLTIuNyw5LjIgYyAtMC41LDEuMiAtMS4xLDIuMyAtMiwzLjIgLTAuOSwwLjkgLTEuOSwxLjYgLTMuMSwyLjIgLTEuMiwwLjUgLTIuNiwwLjggLTQuMSwwLjggLTEuNCwwIC0yLjcsLTAuMyAtMy45LC0wLjcgLTEuMiwtMC41IC0yLjMsLTEuMiAtMy4xLC0yLjEgLTAuOSwtMC45IC0xLjYsLTIgLTIuMSwtMy4zIC0wLjUsLTEuMyAtMC43LC0yLjcgLTAuNywtNC4yIDAsLTEuNCAwLjIsLTIuNyAwLjcsLTMuOSAwLjUsLTEuMiAxLjIsLTIuMyAyLC0zLjIgMC45LC0wLjkgMS45LC0xLjYgMy4yLC0yLjIgMS4yLC0wLjUgMi42LC0wLjggNC4xLC0wLjggMS40LDAgMi43LDAuMiAzLjksMC43IDEuMiwwLjUgMi4zLDEuMiAzLjEsMi4xIDAuOSwwLjkgMS42LDIgMi4xLDMuMyAwLjUsMS4zIDAuNywyLjcgMC43LDQuMyAtMC4xLDEuMyAtMC4zLDIuNiAtMC44LDMuOCIKICAgICAgICAgY2xhc3M9InN0MCIKICAgICAgICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIKICAgICAgICAgc3R5bGU9ImZpbGw6IzBlOTU1ZSIgLz4KICAgICAgPHBhdGgKICAgICAgICAgaWQ9InBhdGg4MzMiCiAgICAgICAgIGQ9Im0gNjExLjgsMjg0LjkgYyAxLjUsLTAuNyAyLjIsLTEuOCAyLjIsLTMuMyAwLC0xLjEgLTAuNCwtMi4xIC0xLjIsLTIuOCAtMC44LC0wLjcgLTIuMSwtMS4xIC0zLjcsLTEuMSBIIDYwMyB2IDEzIGggMi44IHYgLTUuMiBoIDMgbCAyLjEsNS4yIGggMyBsIC0yLjQsLTUuNyB6IG0gLTAuOCwtMy40IGMgMCwxLjIgLTAuOCwxLjggLTIuNCwxLjggaCAtMi44IHYgLTMuNSBoIDMgYyAxLjUsLTAuMSAyLjIsMC41IDIuMiwxLjciCiAgICAgICAgIGNsYXNzPSJzdDAiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMwZTk1NWUiIC8+CiAgICA8L2c+CiAgPC9nPgogIDxzdHlsZQogICAgIGlkPSJzdHlsZTgxNSIKICAgICB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6IzBFOTU1RTt9Cjwvc3R5bGU+Cjwvc3ZnPgo=",
+            Position = { 15, 15 },
+            Size = { 200, 34 }
+        },
+            -- Plug-in Title
+        {
+            Type = "Label",
+            Text = "Smart IP Speaker Plug-In v.0.1",
+            Position = {220 , 32},
+            Size = {200, 20 },
+            TextSize = 14,
+            Color = Colors.White,
+            HTextAlign = "Left",
+        },
+            -- Gain Title
+        {
+            Type = "Label",
+            Text = "GAIN",
+            Position = {xControls + 300, yControls + 15},
+            Size = {60, 20 },
+            TextSize = 14,
+            Color = Colors.White,
+            HTextAlign = "Center",
+         },
+            -- Ip label
+         {
+            Type = "Label",
+            Text = "IP Address",
+            Position = {xControls, yControls + 15},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         }
+
+    }
+ 
 --[[     table.insert(
         graphics,
         {
