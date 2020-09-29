@@ -73,6 +73,22 @@ function GetControls(props)
             UserPin = true,
             PinStyle = "Input",
             Count = 1,
+        },
+
+        {
+            Name = "User",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Input",
+            Count = 1,
+        },
+
+        {
+            Name = "Password",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Input",
+            Count = 1,
         }
     }
     return ctls
@@ -127,12 +143,38 @@ function GetControlLayout(props)
         Style = "Text",
         PrettyName = "Device~IP Address",
         TextBoxStyle = "Normal",
-        Position = { xControls + 90, yControls + 15 },
+        Position = { xControls + 90, yControls + 45 },
         Size = { 100 , 24 },
         Fill = Colors.White,
         Color = Colors.White,
         TextSize = 12,
-        HTextAlign = "Left",
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["User"] ={
+        Style = "Text",
+        PrettyName = "Device~Name",
+        TextBoxStyle = "Normal",
+        Position = { xControls + 90, yControls + 75 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.White,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["Password"] ={
+        Style = "Text",
+        PrettyName = "Device~Password",
+        TextBoxStyle = "Normal",
+        Position = { xControls + 90, yControls + 105 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.White,
+        TextSize = 12,
+        HTextAlign = "Center",
         VTextAlign = "Center",
       }
 
@@ -181,7 +223,29 @@ function GetControlLayout(props)
          {
             Type = "Label",
             Text = "IP Address",
-            Position = {xControls, yControls + 15},
+            Position = {xControls, yControls + 45},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "User",
+            Position = {xControls, yControls + 75},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Password",
+            Position = {xControls, yControls + 105},
             Size = {80, 24 },
             TextSize = 14,
             Color = Colors.White,
