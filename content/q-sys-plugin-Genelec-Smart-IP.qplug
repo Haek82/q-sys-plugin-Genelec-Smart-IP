@@ -154,7 +154,7 @@ function GetControlLayout(props)
 
       layout["User"] ={
         Style = "Text",
-        PrettyName = "Device~Name",
+        PrettyName = "Device~User",
         TextBoxStyle = "Normal",
         Position = { xControls + 90, yControls + 75 },
         Size = { 100 , 24 },
