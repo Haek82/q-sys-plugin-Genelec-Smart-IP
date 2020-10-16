@@ -141,13 +141,6 @@ end
 local pagenames = {"Control"}
 
 -- This function allows you to populate pages in your plugin.
---[[
-function GetPages(props)
-    pages = {}
-    table.insert(pages, {name = pagenames[1]})
-    return pages
-end
-]]
 function GetPages(props)
     local pages = {}
     local function AddPage(name) table.insert( pages, { name = name }) end
