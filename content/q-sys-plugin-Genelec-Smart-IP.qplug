@@ -1,6 +1,6 @@
 PluginInfo = {
     Name = "Genelec~SmartIP", -- The tilde here indicates folder structure in the Shematic Elements pane
-    Version = "0.0.3",
+    Version = "0.0.4",
     Id = "Smart-Ip", -- show this is just a unique id. Show some commented out 'fun' unique ids
     Description = "Genelec Smart Ip Speaker Plug-in",
     ShowDebug = true,
@@ -437,23 +437,6 @@ function GetControlLayout(props)
          
 
     }
- 
---[[     table.insert(
-        graphics,
-        {
-            Type = "Text",
-            Text = "My Text Field",
-            Font = "Roboto",
-            FontSize = 12,
-            FontStyle = "Bold",
-            HTextAlign = "Left",
-            Color = Colors.Black,
-            Position = {x + 5, y + 20},
-            Size = {100, 20}
-        }
-    ) ]]
-    -- Buttons Section
-
 
     return layout, graphics
 end
@@ -474,6 +457,83 @@ if Controls then
         receiverName = ""
     }
 
+            
+    function AudioResponse(tbl, code, data, err, headers)  -- Response function for Audio.
+        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
+        print("Headers:")
+        for hName,Val in pairs(headers) do
+          print(string.format( "\t%s = %s", hName, Val ) )
+        end
+        print( "\rHTML Data: "..data )
+    end
+
+    function DeviceResponse(tbl, code, data, err, headers)  -- Responce funciton for Device.
+        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
+        print("Headers:")
+        for hName,Val in pairs(headers) do
+          print(string.format( "\t%s = %s", hName, Val ) )
+        end
+        print( "\rHTML Data: "..data )
+    end
+
+    function Ipv4Response(tbl, code, data, err, headers)  -- Responce funciton for Ipv4.
+        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
+        print("Headers:")
+        for hName,Val in pairs(headers) do
+          print(string.format( "\t%s = %s", hName, Val ) )
+        end
+        print( "\rHTML Data: "..data )
+    end
+
+    function IdResponse(tbl, code, data, err, headers)  -- Responce funciton for Id.
+        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
+        print("Headers:")
+        for hName,Val in pairs(headers) do
+          print(string.format( "\t%s = %s", hName, Val ) )
+        end
+        print( "\rHTML Data: "..data )
+    end
+
+    function DanteNameResponse(tbl, code, data, err, headers)  -- Responce funciton for Dante (Receiver).
+        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
+        print("Headers:")
+        for hName,Val in pairs(headers) do
+          print(string.format( "\t%s = %s", hName, Val ) )
+        end
+        print( "\rHTML Data: "..data )
+    end
+
+        -- Make NEW PUT function
+
+    function GetAudio() -- Get Volume / Mute status from speaker
+        local httpstring = string.format("http://%s:9000/public/v1/audio/volume", Speaker["ip"])
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse }
+    end
+
+    function GetDevice() -- Get device info / model
+        local httpstring = string.format("http://%s:9000/public/v1/device/info", Speaker["ip"])
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DeviceResponse }
+    end
+
+    function GetIpv4() -- Get ipv4 / mac address / host name
+        local httpstring = string.format("http://%s:9000/api/v1/network/ipv4", Speaker["ip"])
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response }
+    end
+
+    function GetId() -- Get id / Barcode
+        local httpstring = string.format("http://%s:9000/api/v1/device/id", Speaker["ip"])
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse }
+    end
+    
+    function GetDanteName() -- Get Dante Name
+        local httpstring = string.format("http://%s:9000/api/v1/aoip/dante/identity", Speaker["ip"])
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse }
+    end
+
+    -- send mute fucntion
+    -- send volume function
+
+
     function init() -- initialize script, run once
         if Controls.IPAddress.String == nil or Controls.IPAddress.String == "" then -- populate ipaddress with default ip if empty
             Controls.IPAddress.String = Speaker["ip"]
@@ -486,34 +546,19 @@ if Controls then
         if Controls.Password.String == nil or Controls.Password.String == "" then --populate with default password if empty
             Controls.Password.String = Speaker["password"]
         end
-
-        -- Get Volume / Mute status from speaker
-        -- Get device info / model
-        -- Get ipv4 / mac address / host name
-        -- Get id / Barcode
-        -- Get Dante Name
+        
+        GetAudio()
+        GetDevice()
+        GetIpv4()
+        GetId()
+        GetDanteName()
 
     end
-
-    -- send mute fucntion
-    -- send volume function
-
-    function done(tbl, code, data, err, headers)  -- MAKE NEW HTTP GET FUNCTION
-        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
-        print("Headers:")
-        for hName,Val in pairs(headers) do
-          print(string.format( "\t%s = %s", hName, Val ) )
-        end
-        print( "\rHTML Data: "..data )
-    end
-
-    -- Make NEW PUT function
-
-    --HttpClient.Download { Url = Speaker["ip"], Headers = { ["Content-Type"] = "application/json" } , Timeout = 5, EventHandler = done }
 
     init() -- run once upon start script
 
-    for k, v in pairs(Controls) do
+    --Setup EventHandlers
+    for k, v in pairs(Controls) do 
         if k == "IpAddress" then
             v.EventHandler = function(changedControl)
                 Speaker["ip"] = Controls.IpAddress.String
