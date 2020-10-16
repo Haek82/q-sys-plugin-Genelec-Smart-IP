@@ -1,7 +1,7 @@
 PluginInfo = {
     Name = "Genelec~SmartIP", -- The tilde here indicates folder structure in the Shematic Elements pane
-    Version = "0.0.2",
-    Id = "Smart-Ip.0.0.2-master", -- show this is just a unique id. Show some commented out 'fun' unique ids
+    Version = "0.0.3",
+    Id = "Smart-Ip", -- show this is just a unique id. Show some commented out 'fun' unique ids
     Description = "Genelec Smart Ip Speaker Plug-in",
     ShowDebug = true,
     Author = "Hans Ekman, Audico Systems Oy 2020",
@@ -169,7 +169,8 @@ function GetControlLayout(props)
     --local ctl_str = tostring(props["SomeValue"].Value == 1 and "" or " " .. PageIndex)
     -- x,y allows an easy method of knowing where you are relative to the section being designed
     local x, y = 0, 0
-    local xControls, yControls = 25, 70
+    local xControls, yControls = 35, 70
+    local textBoxSize = {110, 24}
 
     layout["Mute"] = {
         PrettyName = "Mute",
@@ -199,7 +200,7 @@ function GetControlLayout(props)
         PrettyName = "Device~IP Address",
         TextBoxStyle = "Normal",
         Position = { xControls + 90, yControls + 45 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.White,
         TextSize = 12,
@@ -212,7 +213,7 @@ function GetControlLayout(props)
         PrettyName = "Device~User",
         TextBoxStyle = "Normal",
         Position = { xControls + 90, yControls + 75 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.White,
         TextSize = 12,
@@ -225,7 +226,7 @@ function GetControlLayout(props)
         PrettyName = "Device~Password",
         TextBoxStyle = "Normal",
         Position = { xControls + 90, yControls + 105 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.White,
         TextSize = 12,
@@ -239,7 +240,7 @@ function GetControlLayout(props)
         TextBoxStyle = "Normal",
         IsReadOnly = true,
         Position = { xControls + 90, yControls + 165 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
         TextSize = 12,
@@ -253,7 +254,7 @@ function GetControlLayout(props)
         TextBoxStyle = "Normal",
         IsReadOnly = true,
         Position = { xControls + 90, yControls + 195 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
         TextSize = 12,
@@ -267,7 +268,7 @@ function GetControlLayout(props)
         TextBoxStyle = "Normal",
         IsReadOnly = true,
         Position = { xControls + 90, yControls + 225 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
         TextSize = 12,
@@ -281,7 +282,7 @@ function GetControlLayout(props)
         TextBoxStyle = "Normal",
         IsReadOnly = true,
         Position = { xControls + 90, yControls + 255 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
         TextSize = 12,
@@ -295,7 +296,7 @@ function GetControlLayout(props)
         TextBoxStyle = "Normal",
         IsReadOnly = true,
         Position = { xControls + 90, yControls + 285 },
-        Size = { 100 , 24 },
+        Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
         TextSize = 12,
@@ -457,15 +458,73 @@ function GetControlLayout(props)
     return layout, graphics
 end
 
+
+  
+
 if Controls then
+
+    Speaker = {
+        ip = "10.0.0.1",
+        user = "admin",
+        password = "admin",
+        mac  = "",
+        barcode =  "",
+        hostName = "",
+        model  = "",
+        receiverName = ""
+    }
+
+    function init() -- initialize script, run once
+        if Controls.IPAddress.String == nil or Controls.IPAddress.String == "" then -- populate ipaddress with default ip if empty
+            Controls.IPAddress.String = Speaker["ip"]
+        end
+
+        if Controls.User.String == nil or Controls.User.String == "" then --populate with defaut username if empty
+            Controls.User.String = Speaker["user"]
+        end
+
+        if Controls.Password.String == nil or Controls.Password.String == "" then --populate with default password if empty
+            Controls.Password.String = Speaker["password"]
+        end
+
+        -- Get Volume / Mute status from speaker
+        -- Get device info / model
+        -- Get ipv4 / mac address / host name
+        -- Get id / Barcode
+        -- Get Dante Name
+
+    end
+
+    -- send mute fucntion
+    -- send volume function
+
+    function done(tbl, code, data, err, headers)  -- MAKE NEW HTTP GET FUNCTION
+        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
+        print("Headers:")
+        for hName,Val in pairs(headers) do
+          print(string.format( "\t%s = %s", hName, Val ) )
+        end
+        print( "\rHTML Data: "..data )
+    end
+
+    -- Make NEW PUT function
+
+    --HttpClient.Download { Url = Speaker["ip"], Headers = { ["Content-Type"] = "application/json" } , Timeout = 5, EventHandler = done }
+
+    init() -- run once upon start script
+
     for k, v in pairs(Controls) do
-        if k == "ButtonToggle" then
+        if k == "IpAddress" then
             v.EventHandler = function(changedControl)
-                if changedControl.Boolean == true then
-                    Controls.IndicatorText.String = "Hello World !"
-                elseif changedControl.Boolean == false then
-                    Controls.IndicatorText.String = ""
-                end
+                Speaker["ip"] = Controls.IpAddress.String
+            end
+        elseif k == "User" then
+            v.EventHandler = function(changedControl)
+                Speaker["user"] = Controls.User.String
+            end
+        elseif k == "Password" then
+            v.EventHandler = function(changedControl)
+                Speaker["password"] = Controls.Password.String
             end
         end
     end
