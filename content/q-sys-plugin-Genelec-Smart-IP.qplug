@@ -1,7 +1,7 @@
 PluginInfo = {
     Name = "Genelec~SmartIP", -- The tilde here indicates folder structure in the Shematic Elements pane
-    Version = "0.0.1-master",
-    Id = "Smart-Ip.0.0.1-master", -- show this is just a unique id. Show some commented out 'fun' unique ids
+    Version = "0.0.2",
+    Id = "Smart-Ip.0.0.2-master", -- show this is just a unique id. Show some commented out 'fun' unique ids
     Description = "Genelec Smart Ip Speaker Plug-in",
     ShowDebug = true,
     Author = "Hans Ekman, Audico Systems Oy 2020",
@@ -14,7 +14,8 @@ local Colors = {
     Red = {255, 0, 0},
     Green = {0, 255, 0},
     GenelecGreen = {0, 122, 83},
-    GrayBackground = {50,62,68}
+    GrayBackground = {50,62,68},
+    TextBoxGray = {194,194,194}
 }
 
 -- We can let users determine some of the plugin properties by exposing them here
@@ -89,20 +90,74 @@ function GetControls(props)
             UserPin = true,
             PinStyle = "Input",
             Count = 1,
+        },
+        
+        {
+            Name = "MAC",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Output",
+            Count = 1,
+        },
+
+        {
+            Name = "Barcode",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Output",
+            Count = 1,
+        },
+        
+        {
+            Name = "HostName",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Output",
+            Count = 1,
+        },
+
+        {
+            Name = "Model",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Output",
+            Count = 1,
+        },
+
+        {
+            Name = "ReceiverName",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Output",
+            Count = 1,
         }
+
+
     }
     return ctls
 end
 
 -- Variable holding Page Names for ease
-local pagenames = {"Display"}
+local pagenames = {"Control"}
 
 -- This function allows you to populate pages in your plugin.
+--[[
 function GetPages(props)
     pages = {}
     table.insert(pages, {name = pagenames[1]})
     return pages
 end
+]]
+function GetPages(props)
+    local pages = {}
+    local function AddPage(name) table.insert( pages, { name = name }) end
+    for ix,name in ipairs(pagenames) do
+      AddPage(pagenames[ix])
+    end
+    return pages
+  end
+  
+
 
 -- This function allows you to layout pages in your plugin.
 function GetControlLayout(props)
@@ -114,7 +169,7 @@ function GetControlLayout(props)
     --local ctl_str = tostring(props["SomeValue"].Value == 1 and "" or " " .. PageIndex)
     -- x,y allows an easy method of knowing where you are relative to the section being designed
     local x, y = 0, 0
-    local xControls, yControls = 15, 70
+    local xControls, yControls = 25, 70
 
     layout["Mute"] = {
         PrettyName = "Mute",
@@ -178,6 +233,76 @@ function GetControlLayout(props)
         VTextAlign = "Center",
       }
 
+      layout["MAC"] ={
+        Style = "Text",
+        PrettyName = "Info~MAC",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 165 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["Barcode"] ={
+        Style = "Text",
+        PrettyName = "Info~Barcode",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 195 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["HostName"] ={
+        Style = "Text",
+        PrettyName = "Info~HostName",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 225 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["Model"] ={
+        Style = "Text",
+        PrettyName = "Info~Model",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 255 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["ReceiverName"] ={
+        Style = "Text",
+        PrettyName = "Info~ReceiverName",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 285 },
+        Size = { 100 , 24 },
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
     -- Graphics Section
     graphics =
     {
@@ -202,7 +327,7 @@ function GetControlLayout(props)
             -- Plug-in Title
         {
             Type = "Label",
-            Text = "Smart IP Speaker Plug-In v.0.1",
+            Text = "Smart IP Speaker Plug-In v." .. PluginInfo["Version"],
             Position = {220 , 32},
             Size = {200, 20 },
             TextSize = 14,
@@ -251,7 +376,64 @@ function GetControlLayout(props)
             Color = Colors.White,
             IsBold = true,
             HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "MAC",
+            Position = {xControls, yControls + 165},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Barcode",
+            Position = {xControls, yControls + 195},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Host Name",
+            Position = {xControls, yControls + 225},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Model",
+            Position = {xControls, yControls + 255},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Receiver Name",
+            Position = {xControls - 20, yControls + 285},
+            Size = {95, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
          }
+
+         
 
     }
  
