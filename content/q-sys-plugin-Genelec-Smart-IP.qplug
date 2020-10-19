@@ -438,9 +438,12 @@ end
   
 
 if Controls then
+    
+    rapidJson = require("rapidjson")
+    GainFB = true
 
     Speaker = {
-        ip = "10.0.0.1",
+        ip = "10.10.0.42",
         user = "admin",
         password = "admin",
         mac  = "",
@@ -452,80 +455,85 @@ if Controls then
 
             
     function AudioResponse(tbl, code, data, err, headers)  -- Response function for Audio.
-        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
-        print("Headers:")
-        for hName,Val in pairs(headers) do
-          print(string.format( "\t%s = %s", hName, Val ) )
+        local jsonTbl = rapidJson.decode(data)
+        --print(jsonTbl["level"])
+        --print(jsonTbl["mute"])
+        Controls.Gain.Value = jsonTbl["level"]
+        if jsonTbl["mute"] then
+            Controls.Mute.Boolean = true
+        else
+            Controls.Mute.Boolean = false
         end
-        print( "\rHTML Data: "..data )
-    end
 
-    function DeviceResponse(tbl, code, data, err, headers)  -- Responce funciton for Device.
-        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
-        print("Headers:")
-        for hName,Val in pairs(headers) do
-          print(string.format( "\t%s = %s", hName, Val ) )
-        end
-        print( "\rHTML Data: "..data )
     end
 
     function Ipv4Response(tbl, code, data, err, headers)  -- Responce funciton for Ipv4.
-        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
-        print("Headers:")
-        for hName,Val in pairs(headers) do
-          print(string.format( "\t%s = %s", hName, Val ) )
-        end
-        print( "\rHTML Data: "..data )
+        local jsonTbl = rapidJson.decode(data)
+        Controls.HostName.String = jsonTbl["hostname"]
     end
 
     function IdResponse(tbl, code, data, err, headers)  -- Responce funciton for Id.
-        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
-        print("Headers:")
-        for hName,Val in pairs(headers) do
-          print(string.format( "\t%s = %s", hName, Val ) )
-        end
-        print( "\rHTML Data: "..data )
+        local jsonTbl = rapidJson.decode(data)
+        Controls.MAC.String = jsonTbl["mac"]
+        Controls.Barcode.String = jsonTbl["barcode"]
+        Controls.Model.String = jsonTbl["model"]
     end
 
     function DanteNameResponse(tbl, code, data, err, headers)  -- Responce funciton for Dante (Receiver).
-        print(string.format( "HTTP response from '%s': Return Code=%i; Error=%s", tbl.Url, code, err or "None" ) )
-        print("Headers:")
-        for hName,Val in pairs(headers) do
-          print(string.format( "\t%s = %s", hName, Val ) )
-        end
-        print( "\rHTML Data: "..data )
+        local jsonTbl = rapidJson.decode(data)
+        Controls.ReceiverName.String = jsonTbl["fname"]
     end
 
         -- Make NEW PUT function
 
     function GetAudio() -- Get Volume / Mute status from speaker
         local httpstring = string.format("http://%s:9000/public/v1/audio/volume", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse }
-    end
-
-    function GetDevice() -- Get device info / model
-        local httpstring = string.format("http://%s:9000/public/v1/device/info", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DeviceResponse }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse, Timeout = 30}
     end
 
     function GetIpv4() -- Get ipv4 / mac address / host name
         local httpstring = string.format("http://%s:9000/api/v1/network/ipv4", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response, Timeout = 30 }
     end
 
     function GetId() -- Get id / Barcode
         local httpstring = string.format("http://%s:9000/api/v1/device/id", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse, Timeout = 30 }
     end
     
     function GetDanteName() -- Get Dante Name
         local httpstring = string.format("http://%s:9000/api/v1/aoip/dante/identity", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse, Timeout = 30 }
     end
 
-    -- send mute fucntion
-    -- send volume function
 
+    function GainFeedback(tbl, code, d, e)
+        print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
+        if code == 200 then
+            GainFB = true
+        end
+    end
+    -- send mute fucntion
+    function PutAudio(volume, mute)
+        local tbl = {
+            level = volume,
+            mute = mute
+        }        
+        jsonAudioStr = rapidJson.encode(tbl)
+        
+        local BaseURL = string.format("http://%s:9000/public/v1/audio/volume", Speaker["ip"])
+        HttpClient.Upload {
+          Url = BaseURL,
+          Method = "PUT", 
+          User = Speaker["user"], 
+          Password = Speaker["password"], 
+          Data = jsonAudioStr, 
+          Headers = {
+            ["Content-Type"] = "application/json"
+          },
+          EventHandler = GainFeedback
+        }
+      end
 
     function init() -- initialize script, run once
         if Controls.IPAddress.String == nil or Controls.IPAddress.String == "" then -- populate ipaddress with default ip if empty
@@ -541,29 +549,55 @@ if Controls then
         end
         
         GetAudio()
-        GetDevice()
-        GetIpv4()
-        GetId()
-        GetDanteName()
-
+        Timer.CallAfter(GetIpv4, 0.1)
+        Timer.CallAfter(GetId, 0.2)
+        Timer.CallAfter(GetDanteName, 0.3)
     end
 
     init() -- run once upon start script
 
     --Setup EventHandlers
     for k, v in pairs(Controls) do 
-        if k == "IpAddress" then
+        --print(k,v)
+        if k == "IPAddress" then
             v.EventHandler = function(changedControl)
-                Speaker["ip"] = Controls.IpAddress.String
+                if Controls.IPAddress then
+                    Speaker["ip"] = Controls.IPAddress.String
+                    init()
+                end
             end
         elseif k == "User" then
             v.EventHandler = function(changedControl)
-                Speaker["user"] = Controls.User.String
+                if Controls.User then
+                    Speaker["user"] = Controls.User.String
+                    init()
+                end
             end
         elseif k == "Password" then
             v.EventHandler = function(changedControl)
-                Speaker["password"] = Controls.Password.String
+                if Controls.Password then
+                    Speaker["password"] = Controls.Password.String
+                    init()
+                end
             end
+        elseif k == "Gain" then
+            v.EventHandler = function(changedControl)
+                if Controls.Gain then
+                    if GainFB then
+                        GainFB = false
+                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                    end
+                end
+            end
+        elseif k == "Mute" then
+            v.EventHandler = function(changedControl)
+                if Controls.Mute then
+                    if GainFB then
+                        GainFB = false
+                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                    end
+                end
+            end                    
         end
     end
 end
