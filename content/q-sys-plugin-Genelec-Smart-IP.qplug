@@ -1,6 +1,6 @@
 PluginInfo = {
     Name = "Genelec~SmartIP", -- The tilde here indicates folder structure in the Shematic Elements pane
-    Version = "0.0.4",
+    Version = "0.0.5",
     Id = "Smart-Ip", -- show this is just a unique id. Show some commented out 'fun' unique ids
     Description = "Genelec Smart Ip Speaker Plug-in",
     ShowDebug = true,
@@ -60,7 +60,7 @@ function GetControls(props)
             Name = "Gain",
             ControlType = "Knob",
             ControlUnit = "Float",
-            Min = -120.0,
+            Min = -130.0,
             Max = 0,
             UserPin = true,
             PinStyle = "Input",
@@ -440,7 +440,6 @@ end
 if Controls then
     
     rapidJson = require("rapidjson")
-    GainFB = true
 
     Speaker = {
         ip = "10.10.0.42",
@@ -529,7 +528,9 @@ if Controls then
           Password = Speaker["password"], 
           Data = jsonAudioStr, 
           Headers = {
-            ["Content-Type"] = "application/json"
+            ["Connection"] = "keep-alive",
+            ["Content-Type"] = "application/json",
+            ["Expect"] = ""  
           },
           EventHandler = GainFeedback
         }
@@ -583,19 +584,13 @@ if Controls then
         elseif k == "Gain" then
             v.EventHandler = function(changedControl)
                 if Controls.Gain then
-                    if GainFB then
-                        GainFB = false
-                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
-                    end
+                    PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
                 end
             end
         elseif k == "Mute" then
             v.EventHandler = function(changedControl)
                 if Controls.Mute then
-                    if GainFB then
-                        GainFB = false
-                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
-                    end
+                    PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
                 end
             end                    
         end
