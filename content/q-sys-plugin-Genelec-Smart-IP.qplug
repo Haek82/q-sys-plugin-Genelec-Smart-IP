@@ -130,6 +130,14 @@ function GetControls(props)
             UserPin = true,
             PinStyle = "Output",
             Count = 1,
+        },
+
+        {
+            Name = "Status",
+            ControlType = "Indicator",
+            IndicatorType = "Status",
+            UserPin = true,
+            PinStyle = "Output",
         }
 
 
@@ -174,13 +182,14 @@ function GetControlLayout(props)
         Color = {223, 0, 36},
 		UnlinkOffColor = false,
         Position = {xControls + 298, yControls + 355},
-		Size = {64, 40}
+        Size = {64, 40}
+        
     }
 
     layout["Gain"] = {
         PrettyName = "Gain",
         Style = "Fader",
-        ControlUnit = "Float",
+        ControlUnit = "dB",
         Color = Colors.GenelecGreen,
         Position = {xControls + 300, yControls + 30},
         Size = { 60 , 320 },
@@ -289,6 +298,20 @@ function GetControlLayout(props)
         TextBoxStyle = "Normal",
         IsReadOnly = true,
         Position = { xControls + 90, yControls + 285 },
+        Size = textBoxSize,
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+
+      layout["Status"] ={
+        Style = "Status",
+        PrettyName = "Status",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 345 },
         Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
@@ -425,6 +448,17 @@ function GetControlLayout(props)
             Color = Colors.White,
             IsBold = true,
             HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Status",
+            Position = {xControls - 20, yControls + 345},
+            Size = {95, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
          }
 
          
@@ -452,67 +486,96 @@ if Controls then
         receiverName = ""
     }
 
+    function Status(code, string)
+        Controls.Status.Value = code
+        Controls.Status.String = string
+    end
+
+    function httpCodeChecker(code) --function for posting http code to Status output.
+        if code >= 100 and code < 400 then
+          Status(0, "OK")
+        elseif code >= 400 and code < 500 then
+          Status(2, "Client Error ".. code)
+        elseif code >= 500 then
+          Status(2, "Server Error ".. code)
+        elseif code == 0 then
+          Status(4, "Can not connect.")  
+        end
+    end
+
             
     function AudioResponse(tbl, code, data, err, headers)  -- Response function for Audio.
-        local jsonTbl = rapidJson.decode(data)
-        --print(jsonTbl["level"])
-        --print(jsonTbl["mute"])
-        Controls.Gain.Value = jsonTbl["level"]
-        if jsonTbl["mute"] then
-            Controls.Mute.Boolean = true
-        else
-            Controls.Mute.Boolean = false
+        
+        httpCodeChecker(code)
+
+        if code == 200 then
+            local jsonTbl = rapidJson.decode(data)
+            --print(jsonTbl["level"])
+            --print(jsonTbl["mute"])
+            Controls.Gain.Value = jsonTbl["level"]
+            if jsonTbl["mute"] then
+                Controls.Mute.Boolean = true
+            else
+                Controls.Mute.Boolean = false
+            end
         end
-
     end
 
-    function Ipv4Response(tbl, code, data, err, headers)  -- Responce funciton for Ipv4.
-        local jsonTbl = rapidJson.decode(data)
-        Controls.HostName.String = jsonTbl["hostname"]
+    function Ipv4Response(tbl, code, data, err, headers)  -- Response function for Ipv4.
+        httpCodeChecker(code)
+
+        if code == 200 then
+            local jsonTbl = rapidJson.decode(data)
+            Controls.HostName.String = jsonTbl["hostname"]
+        end
     end
 
-    function IdResponse(tbl, code, data, err, headers)  -- Responce funciton for Id.
-        local jsonTbl = rapidJson.decode(data)
-        Controls.MAC.String = jsonTbl["mac"]
-        Controls.Barcode.String = jsonTbl["barcode"]
-        Controls.Model.String = jsonTbl["model"]
+    function IdResponse(tbl, code, data, err, headers)  -- Response function for Id.
+        httpCodeChecker(code)
+
+        if code == 200 then
+            local jsonTbl = rapidJson.decode(data)
+            Controls.MAC.String = jsonTbl["mac"]
+            Controls.Barcode.String = jsonTbl["barcode"]
+            Controls.Model.String = jsonTbl["model"]
+        end
     end
 
-    function DanteNameResponse(tbl, code, data, err, headers)  -- Responce funciton for Dante (Receiver).
-        local jsonTbl = rapidJson.decode(data)
-        Controls.ReceiverName.String = jsonTbl["fname"]
-    end
+    function DanteNameResponse(tbl, code, data, err, headers)  -- Response function for Dante (Receiver).
+        httpCodeChecker(code)
 
-        -- Make NEW PUT function
+        if code == 200 then
+            local jsonTbl = rapidJson.decode(data)
+            Controls.ReceiverName.String = jsonTbl["fname"]
+        end
+    end
 
     function GetAudio() -- Get Volume / Mute status from speaker
         local httpstring = string.format("http://%s:9000/public/v1/audio/volume", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse, Timeout = 30}
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse, Timeout = 5}
     end
 
     function GetIpv4() -- Get ipv4 / mac address / host name
         local httpstring = string.format("http://%s:9000/api/v1/network/ipv4", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response, Timeout = 30 }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response, Timeout = 5 }
     end
 
     function GetId() -- Get id / Barcode
         local httpstring = string.format("http://%s:9000/api/v1/device/id", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse, Timeout = 30 }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse, Timeout = 5 }
     end
     
     function GetDanteName() -- Get Dante Name
         local httpstring = string.format("http://%s:9000/api/v1/aoip/dante/identity", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse, Timeout = 30 }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse, Timeout = 5 }
     end
 
 
     function GainFeedback(tbl, code, d, e)
+        httpCodeChecker(code)
         print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
-        if code == 200 then
-            GainFB = true
-        end
     end
-    -- send mute fucntion
+    
     function PutAudio(volume, mute)
         local tbl = {
             level = volume,
@@ -532,11 +595,15 @@ if Controls then
             ["Content-Type"] = "application/json",
             ["Expect"] = ""  
           },
-          EventHandler = GainFeedback
+          EventHandler = GainFeedback,
+          Timeout = 2
         }
       end
 
     function init() -- initialize script, run once
+
+        Status(5 ,"")
+
         if Controls.IPAddress.String == nil or Controls.IPAddress.String == "" then -- populate ipaddress with default ip if empty
             Controls.IPAddress.String = Speaker["ip"]
         end
