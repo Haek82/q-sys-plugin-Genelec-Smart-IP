@@ -54,12 +54,28 @@ function GetControls(props)
             Count = 1,
             UserPin = true
         },
+
+        {
+            Name = "GainIncAdd",
+            ControlType = "Button",
+            ButtonType = "Momentary",
+            Count = 1,
+            UserPin = false
+        },
+
+        {
+            Name = "GainIncSubb",
+            ControlType = "Button",
+            ButtonType = "Momentary",
+            Count = 1,
+            UserPin = false
+        },
         -- ControlType == Knob
         
         {
             Name = "Gain",
             ControlType = "Knob",
-            ControlUnit = "Float",
+            ControlUnit = "dB",
             Min = -130.0,
             Max = 0,
             UserPin = true,
@@ -181,9 +197,33 @@ function GetControlLayout(props)
         TextFontSize = 16,
         Color = {223, 0, 36},
 		UnlinkOffColor = false,
-        Position = {xControls + 278, yControls + 228},
+        Position = {xControls + 278, yControls + 178},
         Size = {64, 40} 
 
+    }
+
+    layout["GainIncAdd"] = {
+        PrettyName = "Gain +",
+        Style = "Button",
+        ButtonStyle = "Momentary",
+        Legend = "+",
+        TextFontSize = 16,
+        Color = Colors.GenelecGreen,
+		UnlinkOffColor = false,
+        Position = {xControls + 278, yControls + 138},
+        Size = {64, 20} 
+    }
+
+    layout["GainIncSubb"] = {
+        PrettyName = "Gain -",
+        Style = "Button",
+        ButtonStyle = "Momentary",
+        Legend = "-",
+        TextFontSize = 16,
+        Color = Colors.GenelecGreen,
+		UnlinkOffColor = false,
+        Position = {xControls + 278, yControls + 158},
+        Size = {64, 20} 
     }
 
     layout["Gain"] = {
@@ -661,6 +701,24 @@ if Controls then
                     PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
                 end
             end                    
+        elseif k == "GainIncAdd" then
+            v.EventHandler = function(changedControl)
+                if Controls.GainIncAdd then
+                    if Controls.GainIncAdd.Boolean == true then
+                        Controls.Gain.Value = Controls.Gain.Value + 0.5
+                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                    end
+                end
+            end
+        elseif k == "GainIncSubb" then
+            v.EventHandler = function(changedControl)
+                if Controls.GainIncSubb then
+                    if Controls.GainIncSubb.Boolean == true then
+                        Controls.Gain.Value = Controls.Gain.Value - 0.5
+                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                    end
+                end
+            end
         end
     end
 end
