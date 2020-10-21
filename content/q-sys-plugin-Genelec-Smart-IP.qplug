@@ -181,18 +181,18 @@ function GetControlLayout(props)
         TextFontSize = 16,
         Color = {223, 0, 36},
 		UnlinkOffColor = false,
-        Position = {xControls + 298, yControls + 355},
+        Position = {xControls + 278, yControls + 228},
         Size = {64, 40} 
-        
+
     }
 
     layout["Gain"] = {
         PrettyName = "Gain",
-        Style = "Fader",
+        Style = "Knob",
         ControlUnit = "dB",
         Color = Colors.GenelecGreen,
-        Position = {xControls + 300, yControls + 30},
-        Size = { 60 , 320 },
+        Position = {xControls + 280, yControls + 68},
+        Size = { 60 , 60 },
         TextFontSize = 40,
         ShowTextbox = true,
       }
@@ -355,11 +355,12 @@ function GetControlLayout(props)
         {
             Type = "Label",
             Text = "GAIN",
-            Position = {xControls + 300, yControls + 15},
+            Position = {xControls + 280, yControls + 41},
             Size = {60, 20 },
             TextSize = 14,
             Color = Colors.White,
             HTextAlign = "Center",
+            VTextAlign = "Top",
          },
             -- Ip label
          {
