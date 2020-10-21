@@ -182,7 +182,7 @@ function GetControlLayout(props)
         Color = {223, 0, 36},
 		UnlinkOffColor = false,
         Position = {xControls + 298, yControls + 355},
-        Size = {64, 40}
+        Size = {64, 40} 
         
     }
 
