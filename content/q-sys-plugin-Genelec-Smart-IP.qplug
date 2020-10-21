@@ -517,7 +517,7 @@ if Controls then
     rapidJson = require("rapidjson")
 
     Speaker = {
-        ip = "10.10.0.42",
+        ip = "10.10.0.1",
         user = "admin",
         password = "admin",
         mac  = "",
@@ -612,12 +612,12 @@ if Controls then
     end
 
 
-    function GainFeedback(tbl, code, d, e)
+    function GainFeedback(tbl, code, d, e) -- Response for level and mute change
         httpCodeChecker(code)
         print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
     end
     
-    function PutAudio(volume, mute)
+    function PutAudio(volume, mute)  --Send level and mute to speaker
         local tbl = {
             level = volume,
             mute = mute
@@ -647,23 +647,46 @@ if Controls then
 
         if Controls.IPAddress.String == nil or Controls.IPAddress.String == "" then -- populate ipaddress with default ip if empty
             Controls.IPAddress.String = Speaker["ip"]
+        else
+            Speaker["ip"] = Controls.IPAddress.String
         end
 
         if Controls.User.String == nil or Controls.User.String == "" then --populate with defaut username if empty
             Controls.User.String = Speaker["user"]
+        else
+            Speaker["user"] = Controls.User.String
         end
 
         if Controls.Password.String == nil or Controls.Password.String == "" then --populate with default password if empty
             Controls.Password.String = Speaker["password"]
+        else
+            Speaker["password"] = Controls.Password.String
         end
         
+        print(Speaker["ip"])
+
         GetAudio()
         Timer.CallAfter(GetIpv4, 0.1)
         Timer.CallAfter(GetId, 0.2)
         Timer.CallAfter(GetDanteName, 0.3)
     end
 
+    function GainIncAdd() --increment gain upp
+        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+        Controls.Gain.Value = Controls.Gain.Value + 0.5
+    end
+
+    function GainIncSubb() -- incement gain
+        Controls.Gain.Value = Controls.Gain.Value - 0.5
+        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+    end
+
     init() -- run once upon start script
+
+    timerAdd = Timer.New()
+    timerSubb = Timer.New()
+    timerAdd.EventHandler = GainIncAdd
+    timerSubb.EventHandler = GainIncSubb
 
     --Setup EventHandlers
     for k, v in pairs(Controls) do 
@@ -705,8 +728,10 @@ if Controls then
             v.EventHandler = function(changedControl)
                 if Controls.GainIncAdd then
                     if Controls.GainIncAdd.Boolean == true then
-                        Controls.Gain.Value = Controls.Gain.Value + 0.5
-                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                        GainIncAdd()
+                        timerAdd:Start(0.25)
+                    else
+                        timerAdd:Stop()
                     end
                 end
             end
@@ -714,8 +739,10 @@ if Controls then
             v.EventHandler = function(changedControl)
                 if Controls.GainIncSubb then
                     if Controls.GainIncSubb.Boolean == true then
-                        Controls.Gain.Value = Controls.Gain.Value - 0.5
-                        PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                        GainIncSubb()
+                        timerSubb:Start(0.25)
+                    else
+                        timerSubb:Stop()
                     end
                 end
             end
