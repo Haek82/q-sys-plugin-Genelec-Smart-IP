@@ -12,5 +12,5 @@ Every 10sec module syncs itself with speaker in case the speaker has been update
 Genelec Smart IP Manager for example.
 
 <p align="center">
-  <img width="252" height="307" src="https://github.com/Haek82/q-sys-plugin-Genelec-Smart-IP/blob/master/preview.png?raw=true">
+  <img width="378" height="461" src="https://github.com/Haek82/q-sys-plugin-Genelec-Smart-IP/blob/master/preview.png?raw=true">
 </p>
