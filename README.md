@@ -8,5 +8,5 @@ The module uses Genelec Smart IP API a REST style communication with a reduced s
 Upon initialization the module gets parameters from speaker and syncs module with speaker settings.
 Gain and Mute parameters can be controlled from module.
 
-Every 10sec module syncs itself with speaker in case the speaker has been ipdated by another software like
+Every 10sec module syncs itself with speaker in case the speaker has been updated by another software like
 Genelec Smart IP Manager for example.
