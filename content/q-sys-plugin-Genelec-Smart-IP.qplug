@@ -1,6 +1,6 @@
 PluginInfo = {
     Name = "Genelec~SmartIP", -- The tilde here indicates folder structure in the Shematic Elements pane
-    Version = "0.0.5",
+    Version = "0.1.0",
     Id = "Smart-Ip", -- show this is just a unique id. Show some commented out 'fun' unique ids
     Description = "Genelec Smart Ip Speaker Plug-in",
     ShowDebug = true,
@@ -527,6 +527,20 @@ if Controls then
         receiverName = ""
     }
 
+    timerAdd = Timer.New()
+    timerSubb = Timer.New()
+    tick = Timer.New()
+    
+    local pos = 1
+    tickTime = 10
+    
+    tasks = {
+    {function() GetAudio() end, 10},
+    {function() GetIpv4() end, 0.1},
+    {function() GetId() end, 0.1},
+    {function() GetDanteName() end, 0.1}, --poll function array {function call, time delay}
+    }
+
     function Status(code, string)
         Controls.Status.Value = code
         Controls.Status.String = string
@@ -546,13 +560,11 @@ if Controls then
 
             
     function AudioResponse(tbl, code, data, err, headers)  -- Response function for Audio.
-        
         httpCodeChecker(code)
+        --print("Audio")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
-            --print(jsonTbl["level"])
-            --print(jsonTbl["mute"])
             Controls.Gain.Value = jsonTbl["level"]
             if jsonTbl["mute"] then
                 Controls.Mute.Boolean = true
@@ -564,6 +576,7 @@ if Controls then
 
     function Ipv4Response(tbl, code, data, err, headers)  -- Response function for Ipv4.
         httpCodeChecker(code)
+        --print("IP")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -573,6 +586,7 @@ if Controls then
 
     function IdResponse(tbl, code, data, err, headers)  -- Response function for Id.
         httpCodeChecker(code)
+        --print("ID")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -584,6 +598,7 @@ if Controls then
 
     function DanteNameResponse(tbl, code, data, err, headers)  -- Response function for Dante (Receiver).
         httpCodeChecker(code)
+        --print("Dante")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -593,28 +608,29 @@ if Controls then
 
     function GetAudio() -- Get Volume / Mute status from speaker
         local httpstring = string.format("http://%s:9000/public/v1/audio/volume", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse, Timeout = 5}
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = AudioResponse, Timeout = 1}
     end
 
     function GetIpv4() -- Get ipv4 / mac address / host name
         local httpstring = string.format("http://%s:9000/api/v1/network/ipv4", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response, Timeout = 5 }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = Ipv4Response, Timeout = 1 }
     end
 
     function GetId() -- Get id / Barcode
         local httpstring = string.format("http://%s:9000/api/v1/device/id", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse, Timeout = 5 }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = IdResponse, Timeout = 1 }
     end
     
     function GetDanteName() -- Get Dante Name
         local httpstring = string.format("http://%s:9000/api/v1/aoip/dante/identity", Speaker["ip"])
-        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse, Timeout = 5 }
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse, Timeout = 1}
     end
 
 
     function GainFeedback(tbl, code, d, e) -- Response for level and mute change
         httpCodeChecker(code)
         print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
+        tick:Start(tickTime)
     end
     
     function PutAudio(volume, mute)  --Send level and mute to speaker
@@ -639,7 +655,9 @@ if Controls then
           EventHandler = GainFeedback,
           Timeout = 2
         }
+
       end
+
 
     function init() -- initialize script, run once
 
@@ -669,6 +687,8 @@ if Controls then
         Timer.CallAfter(GetIpv4, 0.1)
         Timer.CallAfter(GetId, 0.2)
         Timer.CallAfter(GetDanteName, 0.3)
+
+        tick:Start(tickTime) --ticker timer
     end
 
     function GainIncAdd() --increment gain upp
@@ -683,10 +703,17 @@ if Controls then
 
     init() -- run once upon start script
 
-    timerAdd = Timer.New()
-    timerSubb = Timer.New()
+
     timerAdd.EventHandler = GainIncAdd
     timerSubb.EventHandler = GainIncSubb
+
+    tick.EventHandler = function()
+        tasks[pos][1]() -- Run next task
+        tick:Start(tasks[pos][2]) -- Start timer for next delay time
+        pos = pos + 1 -- Increment position
+        if pos > #tasks then pos = 1 end -- Wrap to start of task list.
+    end
+
 
     --Setup EventHandlers
     for k, v in pairs(Controls) do 
@@ -694,6 +721,7 @@ if Controls then
         if k == "IPAddress" then
             v.EventHandler = function(changedControl)
                 if Controls.IPAddress then
+                    tick:Stop()
                     Speaker["ip"] = Controls.IPAddress.String
                     init()
                 end
@@ -701,6 +729,7 @@ if Controls then
         elseif k == "User" then
             v.EventHandler = function(changedControl)
                 if Controls.User then
+                    tick:Stop()
                     Speaker["user"] = Controls.User.String
                     init()
                 end
@@ -708,6 +737,7 @@ if Controls then
         elseif k == "Password" then
             v.EventHandler = function(changedControl)
                 if Controls.Password then
+                    tick:Stop()
                     Speaker["password"] = Controls.Password.String
                     init()
                 end
@@ -722,6 +752,7 @@ if Controls then
             v.EventHandler = function(changedControl)
                 if Controls.Mute then
                     PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
+                    tick:Stop()
                 end
             end                    
         elseif k == "GainIncAdd" then
@@ -729,7 +760,8 @@ if Controls then
                 if Controls.GainIncAdd then
                     if Controls.GainIncAdd.Boolean == true then
                         GainIncAdd()
-                        timerAdd:Start(0.25)
+                        timerAdd:Start(0.1)
+                        tick:Stop()
                     else
                         timerAdd:Stop()
                     end
@@ -740,7 +772,8 @@ if Controls then
                 if Controls.GainIncSubb then
                     if Controls.GainIncSubb.Boolean == true then
                         GainIncSubb()
-                        timerSubb:Start(0.25)
+                        timerSubb:Start(0.1)
+                        tick:Stop()
                     else
                         timerSubb:Stop()
                     end
