@@ -11,4 +11,6 @@ Gain and Mute parameters can be controlled from module.
 Every 10sec module syncs itself with speaker in case the speaker has been updated by another software like
 Genelec Smart IP Manager for example.
 
-[My image](https://github.com/Haek82/q-sys-plugin-Genelec-Smart-IP/blob/master/preview.png?raw=true)
+<p align="center">
+  <img src="https://github.com/Haek82/q-sys-plugin-Genelec-Smart-IP/blob/master/preview.png?raw=true">
+</p>
