@@ -540,9 +540,6 @@ function GetControlLayout(props)
             IsBold = true,
             HTextAlign = "Right",
          }
-
-         
-
     }
 
     return layout, graphics
@@ -566,50 +563,53 @@ if Controls then
         receiverName = ""
     }
 
-    ipNrTbl = {}
+    ipNrTbl = {} --ip adderesses found by mDNS is stored in this table
 
     udp = UdpSocket.New()
 
-    timerAdd = Timer.New()
-    timerSubb = Timer.New()
-    tick = Timer.New()
+    timerAdd = Timer.New() -- continous "+" gain timer
+    timerSubb = Timer.New() -- continous "-" gain timer
+    tick = Timer.New() --poll timer
     
-    local pos = 1
-    tickTime = 10
+    local pos = 1 --poll "task position"
+    tickTime = 10 --poll time
     
-    tasks = {
+    tasks = { --poll function array {function call, time delay}
     {function() GetAudio() end, 10},
     {function() GetIpv4() end, 0.1},
     {function() GetId() end, 0.1},
-    {function() GetDanteName() end, 0.1}, --poll function array {function call, time delay}
+    {function() GetDanteName() end, 0.1}, 
     }
 
-    function Status(code, string)
+    function Status(code, string) --function for updateing status
         Controls.Status.Value = code
         Controls.Status.String = string
     end
 
+    function clearInfo() --function for clearing information fields
+        Controls.MAC.String = ""
+        Controls.Barcode.String = ""
+        Controls.Model.String = ""
+        Controls.HostName.String = ""
+        Controls.ReceiverName.String = ""
+    end
+
     function httpCodeChecker(code) --function for posting http code to Status output.
         if code >= 100 and code < 400 then
-          Status(0, "OK")
+            Status(0, "OK")
         elseif code >= 400 and code < 500 then
-          Status(2, "Client Error ".. code)
+            Status(2, "Client Error ".. code)
         elseif code >= 500 then
-          Status(2, "Server Error ".. code)
+            Status(2, "Server Error ".. code)
         elseif code == 0 then
-          Status(4, "Can not connect.")
-          Controls.MAC.String = ""
-          Controls.Barcode.String = ""
-          Controls.Model.String = ""
-          Controls.HostName.String = ""
-          Controls.ReceiverName.String = ""
+            Status(4, "Can not connect.")
+            clearInfo()
         end
     end
 
             
     function AudioResponse(tbl, code, data, err, headers)  -- Response function for Audio.
         httpCodeChecker(code)
-        --print("Audio")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -624,7 +624,6 @@ if Controls then
 
     function Ipv4Response(tbl, code, data, err, headers)  -- Response function for Ipv4.
         httpCodeChecker(code)
-        --print("IP")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -634,7 +633,6 @@ if Controls then
 
     function IdResponse(tbl, code, data, err, headers)  -- Response function for Id.
         httpCodeChecker(code)
-        --print("ID")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -646,7 +644,6 @@ if Controls then
 
     function DanteNameResponse(tbl, code, data, err, headers)  -- Response function for Dante (Receiver).
         httpCodeChecker(code)
-        --print("Dante")
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -677,7 +674,7 @@ if Controls then
 
     function GainFeedback(tbl, code, d, e) -- Response for level and mute change
         httpCodeChecker(code)
-        print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
+        --print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d)) --debug
         tick:Start(tickTime)
     end
     
@@ -729,14 +726,14 @@ if Controls then
             Speaker["password"] = Controls.Password.String
         end
         
-        print(Speaker["ip"])
+        --print(Speaker["ip"]) --debug
 
         GetAudio()
         Timer.CallAfter(GetIpv4, 0.1)
         Timer.CallAfter(GetId, 0.2)
         Timer.CallAfter(GetDanteName, 0.3)
 
-        tick:Start(tickTime) --ticker timer
+        tick:Start(tickTime) --ticker timer for polling status
     end
 
     function GainIncAdd() --increment gain upp
@@ -749,19 +746,19 @@ if Controls then
         PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
     end
 
-    function fromhex(str)
+    function fromhex(str) --hex to string, help function
         return (str:gsub('..', function (cc)
             return string.char(tonumber(cc, 16))
         end))
     end
     
-    function tohex(str)
+    function tohex(str) --string to hex, help funtion
         return (str:gsub('.', function (c)
             return string.format('%02X', string.byte(c))
         end))
     end
     
-    function findSpeaker(tbl, ip)
+    function findSpeaker(tbl, ip) --search in table for ip
       ipFound = false
       for _,v in pairs(tbl) do
         if v == ip then
@@ -787,36 +784,30 @@ if Controls then
 
     udp:Open("", 5353 ) -- IP address is optional
     udp:JoinMulticast("224.0.0.251") -- Sends a multicast join report for the multicast address
-    udp:Send("224.0.0.251", 5353, "\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x09\x5f\x73\x6d\x61\x72\x74\x5f\x69\x70\x04\x5f\x74\x63\x70\x05\x6c\x6f\x63\x61\x6c\x00\x00\x0c\x00\x01" )
+    udp:Send("224.0.0.251", 5353, "\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x09\x5f\x73\x6d\x61\x72\x74\x5f\x69\x70\x04\x5f\x74\x63\x70\x05\x6c\x6f\x63\x61\x6c\x00\x00\x0c\x00\x01" )  -- send mDNS query (_smart_ip._tcp.local.)
 
-    udp.EventHandler = function(udp, packet)
-        --print( packet.Address, packet.Port, packet.Data )
+    udp.EventHandler = function(udp, packet)  -- handler for incomming mDNS packets
         str = tohex(packet.Data)
         if string.find(str, "000084000000000100000003095F736D6172745F6970045F746370056C6F63616C") ~= nil then
-          --print(str)
-          --print(str:len())
           ipByte = string.sub(str, str:len() - 7, str:len())
-          --print(ipByte)
           ip1 = string.sub(ipByte, ipByte:len() - 7, ipByte:len() - 6)
           ip2 = string.sub(ipByte, ipByte:len() - 5, ipByte:len() - 4)
           ip3 = string.sub(ipByte, ipByte:len() - 3, ipByte:len() - 2)
           ip4 = string.sub(ipByte, ipByte:len() - 1, ipByte:len())
-          --print (ip1, ip2, ip3, ip4)
-          --print (tonumber(ip1,16),tonumber(ip2,16),tonumber(ip3,16),tonumber(ip4,16))
           ipNr = tonumber(ip1,16).."."..tonumber(ip2,16).."."..tonumber(ip3,16).."."..tonumber(ip4,16)
           print("Speaker found!")
           print("==============")
           print("ip: " .. ipNr)
           
-          if findSpeaker(ipNrTbl, ipNr) == false then
+          if findSpeaker(ipNrTbl, ipNr) == false then -- if not fuld in table add ip address to table
             table.insert(ipNrTbl, ipNr)
           end
           
-          for u,d in pairs(ipNrTbl) do
-            print(u,d)
-          end
+          --for u,d in pairs(ipNrTbl) do --debug
+          --  print(u,d)
+          --end
           
-          Controls.Discovery.Choices = ipNrTbl       
+          Controls.Discovery.Choices = ipNrTbl -- populate dropdown menu.
         end
       end
 
