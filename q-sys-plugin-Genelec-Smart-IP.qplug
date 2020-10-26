@@ -554,7 +554,12 @@ if Controls then
         elseif code >= 500 then
           Status(2, "Server Error ".. code)
         elseif code == 0 then
-          Status(4, "Can not connect.")  
+          Status(4, "Can not connect.")
+          Controls.MAC.String = ""
+          Controls.Barcode.String = ""
+          Controls.Model.String = ""
+          Controls.HostName.String = ""
+          Controls.ReceiverName.String = ""
         end
     end
 
