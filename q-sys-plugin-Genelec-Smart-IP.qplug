@@ -85,6 +85,13 @@ function GetControls(props)
 
         -- ControlType == Text
         {
+            Name = "Discovery",
+            ControlType = "Text",
+            UserPin = false,
+            Count = 1,
+        },
+
+        {
             Name = "IPAddress",
             ControlType = "Text",
             UserPin = true,
@@ -186,7 +193,7 @@ function GetControlLayout(props)
     --local ctl_str = tostring(props["SomeValue"].Value == 1 and "" or " " .. PageIndex)
     -- x,y allows an easy method of knowing where you are relative to the section being designed
     local x, y = 0, 0
-    local xControls, yControls = 35, 70
+    local xControls, yControls = 35, 70 + 30
     local textBoxSize = {110, 24}
 
     layout["Mute"] = {
@@ -197,7 +204,7 @@ function GetControlLayout(props)
         TextFontSize = 16,
         Color = {223, 0, 36},
 		UnlinkOffColor = false,
-        Position = {xControls + 278, yControls + 178},
+        Position = {xControls + 278, yControls + 137},
         Size = {64, 40} 
 
     }
@@ -210,7 +217,7 @@ function GetControlLayout(props)
         TextFontSize = 16,
         Color = Colors.GenelecGreen,
 		UnlinkOffColor = false,
-        Position = {xControls + 278, yControls + 138},
+        Position = {xControls + 278, yControls + 97},
         Size = {64, 20} 
     }
 
@@ -222,7 +229,7 @@ function GetControlLayout(props)
         TextFontSize = 16,
         Color = Colors.GenelecGreen,
 		UnlinkOffColor = false,
-        Position = {xControls + 278, yControls + 158},
+        Position = {xControls + 278, yControls + 117},
         Size = {64, 20} 
     }
 
@@ -231,10 +238,30 @@ function GetControlLayout(props)
         Style = "Knob",
         ControlUnit = "dB",
         Color = Colors.GenelecGreen,
-        Position = {xControls + 280, yControls + 68},
+        Position = {xControls + 280, yControls + 27},
         Size = { 60 , 60 },
         TextFontSize = 40,
         ShowTextbox = true,
+      }
+
+      layout["Discovery"] ={
+        Style = "ComboBox",
+        PrettyName = "Discovery",
+        Position = { xControls + 90, yControls },
+        Size = textBoxSize,
+      }
+
+      layout["IPAddress"] ={
+        Style = "Text",
+        PrettyName = "Device~IP Address",
+        TextBoxStyle = "Normal",
+        Position = { xControls + 90, yControls + 45 },
+        Size = textBoxSize,
+        Fill = Colors.White,
+        Color = Colors.White,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
       }
 
     layout["IPAddress"] ={
@@ -395,7 +422,7 @@ function GetControlLayout(props)
         {
             Type = "Label",
             Text = "GAIN",
-            Position = {xControls + 280, yControls + 41},
+            Position = {xControls + 280, yControls + 0},
             Size = {60, 20 },
             TextSize = 14,
             Color = Colors.White,
@@ -403,6 +430,18 @@ function GetControlLayout(props)
             VTextAlign = "Top",
          },
             -- Ip label
+        {
+            Type = "Label",
+            Text = "Discovery",
+            Position = {xControls, yControls},
+            Size = {80, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+        },
+    
+
          {
             Type = "Label",
             Text = "IP Address",
@@ -526,6 +565,10 @@ if Controls then
         model  = "",
         receiverName = ""
     }
+
+    ipNrTbl = {}
+
+    udp = UdpSocket.New()
 
     timerAdd = Timer.New()
     timerSubb = Timer.New()
@@ -706,9 +749,32 @@ if Controls then
         PutAudio(Controls.Gain.Value, Controls.Mute.Boolean)
     end
 
+    function fromhex(str)
+        return (str:gsub('..', function (cc)
+            return string.char(tonumber(cc, 16))
+        end))
+    end
+    
+    function tohex(str)
+        return (str:gsub('.', function (c)
+            return string.format('%02X', string.byte(c))
+        end))
+    end
+    
+    function findSpeaker(tbl, ip)
+      ipFound = false
+      for _,v in pairs(tbl) do
+        if v == ip then
+          ipFound = true
+          break
+        end
+      end
+      
+      return ipFound
+    end
+
     init() -- run once upon start script
-
-
+    
     timerAdd.EventHandler = GainIncAdd
     timerSubb.EventHandler = GainIncSubb
 
@@ -719,6 +785,40 @@ if Controls then
         if pos > #tasks then pos = 1 end -- Wrap to start of task list.
     end
 
+    udp:Open("", 5353 ) -- IP address is optional
+    udp:JoinMulticast("224.0.0.251") -- Sends a multicast join report for the multicast address
+    udp:Send("224.0.0.251", 5353, "\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x09\x5f\x73\x6d\x61\x72\x74\x5f\x69\x70\x04\x5f\x74\x63\x70\x05\x6c\x6f\x63\x61\x6c\x00\x00\x0c\x00\x01" )
+
+    udp.EventHandler = function(udp, packet)
+        --print( packet.Address, packet.Port, packet.Data )
+        str = tohex(packet.Data)
+        if string.find(str, "000084000000000100000003095F736D6172745F6970045F746370056C6F63616C") ~= nil then
+          --print(str)
+          --print(str:len())
+          ipByte = string.sub(str, str:len() - 7, str:len())
+          --print(ipByte)
+          ip1 = string.sub(ipByte, ipByte:len() - 7, ipByte:len() - 6)
+          ip2 = string.sub(ipByte, ipByte:len() - 5, ipByte:len() - 4)
+          ip3 = string.sub(ipByte, ipByte:len() - 3, ipByte:len() - 2)
+          ip4 = string.sub(ipByte, ipByte:len() - 1, ipByte:len())
+          --print (ip1, ip2, ip3, ip4)
+          --print (tonumber(ip1,16),tonumber(ip2,16),tonumber(ip3,16),tonumber(ip4,16))
+          ipNr = tonumber(ip1,16).."."..tonumber(ip2,16).."."..tonumber(ip3,16).."."..tonumber(ip4,16)
+          print("Speaker found!")
+          print("==============")
+          print("ip: " .. ipNr)
+          
+          if findSpeaker(ipNrTbl, ipNr) == false then
+            table.insert(ipNrTbl, ipNr)
+          end
+          
+          for u,d in pairs(ipNrTbl) do
+            print(u,d)
+          end
+          
+          Controls.Discovery.Choices = ipNrTbl       
+        end
+      end
 
     --Setup EventHandlers
     for k, v in pairs(Controls) do 
@@ -729,6 +829,7 @@ if Controls then
                     tick:Stop()
                     Speaker["ip"] = Controls.IPAddress.String
                     init()
+                    Controls.Discovery.String = ""
                 end
             end
         elseif k == "User" then
@@ -783,6 +884,11 @@ if Controls then
                         timerSubb:Stop()
                     end
                 end
+            end
+        elseif k == "Discovery" then
+            v.EventHandler = function(changedControl)
+                Controls.IPAddress.String = Controls.Discovery.String
+                init()
             end
         end
     end
