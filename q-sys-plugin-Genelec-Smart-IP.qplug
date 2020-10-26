@@ -799,7 +799,7 @@ if Controls then
           print("==============")
           print("ip: " .. ipNr)
           
-          if findSpeaker(ipNrTbl, ipNr) == false then -- if not fuld in table add ip address to table
+          if findSpeaker(ipNrTbl, ipNr) == false then -- if not found in table add ip address to table
             table.insert(ipNrTbl, ipNr)
           end
           
