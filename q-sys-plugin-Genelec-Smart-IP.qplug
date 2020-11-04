@@ -806,7 +806,7 @@ if Controls then
           --for u,d in pairs(ipNrTbl) do --debug
           --  print(u,d)
           --end
-          
+          table.sort(ipNrTbl)
           Controls.Discovery.Choices = ipNrTbl -- populate dropdown menu.
         end
       end
