@@ -15,10 +15,12 @@ local Colors = {
     Green = {0, 255, 0},
     GenelecGreen = {0, 122, 83},
     GrayBackground = {50,62,68},
-    TextBoxGray = {194,194,194}
+    TextBoxGray = {194,194,194},
+    GenelecButton = {40, 51, 56},
+    GenelecButtonPressed = {78, 90, 96}
 }
 
--- We can let users determine some of the plugin properties by exposing them here
+-- We can let users Blinkdetermine some of the plugin properties by exposing them here
 -- While this function can be very useful, it is completely optional and not always needed.
 -- If no Properties are set here, only the position and fill properties of your plugin will show in the Properties pane
 function GetProperties()
@@ -36,6 +38,7 @@ end
 function GetColor(props)
     return Colors.GenelecGreen
 end
+
 -- The below function is where you will populate the controls for your plugin.
 -- If you've written some of the Runtime code already, simply use the control names you populated in Text Controller/Control Script, and use their Properties to inform the values here
 -- ControlType can be Button, Knob, Indicator or Text
@@ -65,6 +68,30 @@ function GetControls(props)
 
         {
             Name = "GainIncSubb",
+            ControlType = "Button",
+            ButtonType = "Momentary",
+            Count = 1,
+            UserPin = false
+        },
+
+        {
+            Name = "Blink",
+            ControlType = "Button",
+            ButtonType = "Toggle",
+            Count = 1,
+            UserPin = false
+        },
+
+        {
+            Name = "Standby",
+            ControlType = "Button",
+            ButtonType = "Toggle",
+            Count = 1,
+            UserPin = false
+        },
+
+        {
+            Name = "Boot",
             ControlType = "Button",
             ButtonType = "Momentary",
             Count = 1,
@@ -154,6 +181,14 @@ function GetControls(props)
             IndicatorType = "Status",
             UserPin = true,
             PinStyle = "Output",
+        },
+
+        {
+            Name = "PowerStatus",
+            ControlType = "Text",
+            UserPin = true,
+            PinStyle = "Output",
+            Count = 1,
         }
 
 
@@ -224,6 +259,48 @@ function GetControlLayout(props)
 		UnlinkOffColor = false,
         Position = {xControls + 278, yControls + 158},
         Size = {64, 20} 
+    }
+
+    layout["Blink"] = {
+        PrettyName = "Blink",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        Legend = "Blink",
+        TextFontSize = 16,
+        Color = Colors.GenelecButtonPressed,
+		StrokeWidth = 1,
+        UnlinkOffColor = false,
+        Position = {xControls + 278, yControls + 278},
+        Size = {64, 40} 
+
+    }
+
+    layout["Standby"] = {
+        PrettyName = "Standby",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        Legend = "Standby",
+        TextFontSize = 16,
+        Color = Colors.GenelecButtonPressed,
+		StrokeWidth = 1,
+        UnlinkOffColor = false,
+        Position = {xControls + 278, yControls + 328},
+        Size = {64, 40} 
+
+    }
+
+    layout["Boot"] = {
+        PrettyName = "Boot",
+        Style = "Button",
+        ButtonStyle = "Momentary",
+        Legend = "Boot",
+        TextFontSize = 16,
+        Color = Colors.GenelecButtonPressed,
+		StrokeWidth = 1,
+        UnlinkOffColor = false,
+        Position = {xControls + 278, yControls + 378},
+        Size = {64, 40} 
+
     }
 
     layout["Gain"] = {
@@ -351,7 +428,21 @@ function GetControlLayout(props)
         PrettyName = "Status",
         TextBoxStyle = "Normal",
         IsReadOnly = true,
-        Position = { xControls + 90, yControls + 345 },
+        Position = { xControls + 90, yControls + 375 },
+        Size = textBoxSize,
+        Fill = Colors.White,
+        Color = Colors.TextBoxGray,
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+      }
+      
+      layout["PowerStatus"] ={
+        Style = "Text",
+        PrettyName = "Power~Status",
+        TextBoxStyle = "Normal",
+        IsReadOnly = true,
+        Position = { xControls + 90, yControls + 315 },
         Size = textBoxSize,
         Fill = Colors.White,
         Color = Colors.TextBoxGray,
@@ -372,7 +463,7 @@ function GetControlLayout(props)
             StrokeColor = Colors.Black,
             StrokeWidth = 1,
             Position = {x, y},
-            Size = {420, 500} -- The width of the main GroupBox is dependent on how many channels the user specified. More channels means a wider group box
+            Size = {420, 550} -- The width of the main GroupBox is dependent on how many channels the user specified. More channels means a wider group box
         },
             --Logo
         {
@@ -494,7 +585,18 @@ function GetControlLayout(props)
          {
             Type = "Label",
             Text = "Status",
-            Position = {xControls - 20, yControls + 345},
+            Position = {xControls - 20, yControls + 375},
+            Size = {95, 24 },
+            TextSize = 14,
+            Color = Colors.White,
+            IsBold = true,
+            HTextAlign = "Right",
+         },
+
+         {
+            Type = "Label",
+            Text = "Power status",
+            Position = {xControls - 20, yControls + 315},
             Size = {95, 24 },
             TextSize = 14,
             Color = Colors.White,
@@ -532,13 +634,14 @@ if Controls then
     tick = Timer.New()
     
     local pos = 1
-    tickTime = 10
+    tickTime = 5
     
     tasks = {
-    {function() GetAudio() end, 10},
+    {function() GetAudio() end, 5},
     {function() GetIpv4() end, 0.1},
     {function() GetId() end, 0.1},
     {function() GetDanteName() end, 0.1}, --poll function array {function call, time delay}
+    {function() GetPowerInfo() end, 0.1},
     }
 
     function Status(code, string)
@@ -565,8 +668,9 @@ if Controls then
 
             
     function AudioResponse(tbl, code, data, err, headers)  -- Response function for Audio.
-        httpCodeChecker(code)
-        --print("Audio")
+        if Controls.Standby.Boolean == false then
+            httpCodeChecker(code)
+        end
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -580,8 +684,9 @@ if Controls then
     end
 
     function Ipv4Response(tbl, code, data, err, headers)  -- Response function for Ipv4.
-        httpCodeChecker(code)
-        --print("IP")
+        if Controls.Standby.Boolean == false then
+            httpCodeChecker(code)
+        end
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -590,8 +695,9 @@ if Controls then
     end
 
     function IdResponse(tbl, code, data, err, headers)  -- Response function for Id.
-        httpCodeChecker(code)
-        --print("ID")
+        if Controls.Standby.Boolean == false then
+            httpCodeChecker(code)
+        end
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
@@ -602,12 +708,29 @@ if Controls then
     end
 
     function DanteNameResponse(tbl, code, data, err, headers)  -- Response function for Dante (Receiver).
-        httpCodeChecker(code)
-        --print("Dante")
+        if Controls.Standby.Boolean == false then
+            httpCodeChecker(code)
+        end
 
         if code == 200 then
             local jsonTbl = rapidJson.decode(data)
             Controls.ReceiverName.String = jsonTbl["fname"]
+        end
+    end
+
+    function PowerResponse(tbl, code, data, err, headers)  -- Response function for Dante (Receiver).
+        httpCodeChecker(code)
+
+        if code == 200 then
+            local jsonTbl = rapidJson.decode(data)
+            Controls.PowerStatus.String = jsonTbl["state"]
+            if Controls.PowerStatus.String == "ACTIVE" then
+                Controls.Standby.Boolean = false
+                Controls.Standby.Legend = "Standby"
+            elseif Controls.PowerStatus.String == "STANDBY" then
+                Controls.Standby.Boolean = true
+                Controls.Standby.Legend = "Power On"
+            end
         end
     end
 
@@ -631,13 +754,27 @@ if Controls then
         HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = DanteNameResponse, Timeout = 1}
     end
 
+    function GetPowerInfo() -- Get Power
+        local httpstring = string.format("http://%s:9000/public/v1/device/pwr", Speaker["ip"])
+        HttpClient.Download { Url = httpstring, User = Speaker["user"], Password = Speaker["password"], EventHandler = PowerResponse, Timeout = 1}
+    end
 
     function GainFeedback(tbl, code, d, e) -- Response for level and mute change
         httpCodeChecker(code)
         print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
         tick:Start(tickTime)
     end
+
+    function BlinkFeedback(tbl, code, d, e) -- Response for blink
+        httpCodeChecker(code)
+        print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
+    end
     
+    function StandbyFeedback(tbl, code, d, e) -- Response for blink
+        httpCodeChecker(code)
+        print( string.format("Response Code: %i\t\tErrors: %s\rData: %s",code, e or "None", d))
+    end
+
     function PutAudio(volume, mute)  --Send level and mute to speaker
         local tbl = {
             level = volume,
@@ -661,8 +798,59 @@ if Controls then
           Timeout = 2
         }
 
-      end
+    end
 
+    function PutBlink(state)
+        local tbl = {
+            take = state,
+            flash = state,
+            color = "YELLOW",
+            intensity = 20,
+            ledIntensity = 100  
+        }
+        jsonBlinkStr = rapidJson.encode(tbl)
+        
+        local BaseURL = string.format("http://%s:9000/api/v1/device/led", Speaker["ip"])
+        HttpClient.Upload {
+          Url = BaseURL,
+          Method = "PUT", 
+          User = Speaker["user"], 
+          Password = Speaker["password"], 
+          Data = jsonBlinkStr, 
+          Headers = {
+            ["Connection"] = "keep-alive",
+            ["Content-Type"] = "application/json",
+            ["Expect"] = ""  
+          },
+          EventHandler = BlinkFeedback,
+          Timeout = 2
+        }
+
+    end
+
+    function PutStandby(str)
+        local tbl = {
+            state = str
+        }
+        jsonStandbyStr = rapidJson.encode(tbl)
+        
+        local BaseURL = string.format("http://%s:9000/public/v1/device/pwr", Speaker["ip"])
+        HttpClient.Upload {
+          Url = BaseURL,
+          Method = "PUT", 
+          User = Speaker["user"], 
+          Password = Speaker["password"], 
+          Data = jsonStandbyStr, 
+          Headers = {
+            ["Connection"] = "keep-alive",
+            ["Content-Type"] = "application/json",
+            ["Expect"] = ""  
+          },
+          EventHandler = StandbyFeedback,
+          Timeout = 2
+        }
+
+    end
 
     function init() -- initialize script, run once
 
@@ -692,6 +880,7 @@ if Controls then
         Timer.CallAfter(GetIpv4, 0.1)
         Timer.CallAfter(GetId, 0.2)
         Timer.CallAfter(GetDanteName, 0.3)
+        Timer.CallAfter(GetPowerInfo, 0.3)
 
         tick:Start(tickTime) --ticker timer
     end
@@ -745,6 +934,39 @@ if Controls then
                     tick:Stop()
                     Speaker["password"] = Controls.Password.String
                     init()
+                end
+            end
+        elseif k == "Blink" then
+            v.EventHandler = function(changedControl)
+                if Controls.Blink then
+                    if Controls.Blink.Boolean == true then
+                        Controls.Blink.Legend = "Blinking"
+                        PutBlink(true)
+                    else
+                        PutBlink(false)
+                        Controls.Blink.Legend = "Blink"
+                    end
+                end
+            end
+        elseif k == "Standby" then
+            v.EventHandler = function(changedControl)
+                if Controls.Standby then
+                    if Controls.Standby.Boolean == true then
+                        PutStandby("STANDBY")
+                        Controls.Standby.Legend = "Power On"
+                    else
+                        PutStandby("ACTIVE")
+                        Controls.Standby.Legend = "Standby"
+                    end
+                end
+            end
+        elseif k == "Boot" then
+            v.EventHandler = function(changedControl)
+                if Controls.Boot then
+                    if Controls.Boot.Boolean == true then
+                        PutStandby("BOOT")
+                        Controls.PowerStatus.String = "BOOTING"
+                    end
                 end
             end
         elseif k == "Gain" then
